@@ -15,7 +15,8 @@ B = [0.0145; -0.0122; 0];
 C = [0 0 1]%eye(3);
 sys = ss(A,B,C,0);
 
-sys1 = ss2tf(A,B,C,D)
+[n,d]=ss2tf(A,B,C,D)
 
+mySys_tf=tf(n,d)
 step(sys)%, hold on, step(sys_d1,Tf)
 impulse(sys)
