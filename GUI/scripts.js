@@ -45,3 +45,14 @@ map.on('click', (event)=> {
     updateTooltipsAndFields();
     
 })
+
+function resetWaypoints() {
+    for (let i = 0; i < markers.length; i++) {
+        map.removeLayer(markers[i]);
+    }
+    markers = [];
+}
+
+document.getElementById('latLongForm').addEventListener('reset', function() {
+    resetWaypoints();
+});

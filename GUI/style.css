@@ -35,6 +35,32 @@ html{
     background: rgb(63, 192, 46);
 }
 
+.form input[type="submit"] {
+    background-color: #4CAF50; 
+    color: white; 
+    padding: 15px 20px; 
+    border: none;
+    border-radius: 5px; 
+    cursor: pointer; 
+}
+
+.form input[type="submit"]:hover {
+    background-color: #45a049;
+}
+
+.form input[type="reset"] {
+    background-color: #ff2626; 
+    color: white; 
+    padding: 15px 20px; 
+    border: none;
+    border-radius: 5px; 
+    cursor: pointer; 
+}
+
+.form input[type="reset"]:hover {
+    background-color: #e40000;
+}
+
 #map{
     width: 100%;
     height: 500px;
