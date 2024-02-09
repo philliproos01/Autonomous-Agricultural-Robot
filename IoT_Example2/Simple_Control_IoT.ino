@@ -287,8 +287,8 @@ void left(int period) {
     digitalWrite(motorDirection1, 0);
     digitalWrite(motorDirection2, 0);
     delay(period);
-    analogWrite(motorDriver1, SPEED);
-    analogWrite(motorDriver2, SPEED);
+    analogWrite(motorDriver1, SPEED*1.4);
+    analogWrite(motorDriver2, SPEED*1.4);
     
     
 
@@ -300,8 +300,8 @@ void right(int period) {
     digitalWrite(motorDirection1, HIGH);
     digitalWrite(motorDirection2, HIGH);
     delay(period); 
-    analogWrite(motorDriver1, SPEED);
-    analogWrite(motorDriver2, SPEED);
+    analogWrite(motorDriver1, SPEED*1.4);
+    analogWrite(motorDriver2, SPEED*1.4);
 }
 
 
@@ -310,8 +310,8 @@ void spin() {
     digitalWrite(motorDirection1, 1);
     digitalWrite(motorDirection2, 1);
     delay(100);
-    analogWrite(motorDriver1, SPEED);
-    analogWrite(motorDriver2, SPEED);
+    analogWrite(motorDriver1, SPEED*2);
+    analogWrite(motorDriver2, SPEED*2);
 
 }
 
@@ -395,4 +395,3 @@ void WriteToSerial()
     }
 }
 */
-
