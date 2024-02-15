@@ -4,9 +4,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $longitudes = array();
 
     for ($i = 1; $i <= 5; $i++) {
-        if (preg_match('/^Lat#/', $_POST['latitude' . $i]) && preg_match('/^Long#/', $_POST['longitude' . $i])) {
-            $latitudes[] = $_POST['latitude' . $i];
-            $longitudes[] = $_POST['longitude' . $i];
+        // if matches the form: "Lat#d: [lat as double]", "Long#d: [long as double]"
+        if (preg_match('/^Lat#\d: (-?\d+(\.\d+))$/', $_POST['latitude' . $i], $latmatches) && preg_match('/^Long#\d: (-?\d+(\.\d+))$/', $_POST['longitude' . $i], $longmatches)) {
+            $latitudes[] = $latmatches[1];
+            $longitudes[] = $longmatches[1];
         }
     }
 
