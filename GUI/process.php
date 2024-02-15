@@ -4,7 +4,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $longitudes = array();
 
     for ($i = 1; $i <= 5; $i++) {
-        if (isset($_POST['latitude' . $i]) && isset($_POST['longitude' . $i])) {
+        if (preg_match('/^Lat#/', $_POST['latitude' . $i]) && preg_match('/^Long#/', $_POST['longitude' . $i])) {
             $latitudes[] = $_POST['latitude' . $i];
             $longitudes[] = $_POST['longitude' . $i];
         }
