@@ -1,48 +1,27 @@
 #include <WiFiNINA.h>
-#include <Wire.h>
-#include <SPI.h>
-#include <Adafruit_BMP280.h>
+#include <ctype.h>
 
+// obviously change this to your own SSID and password
+#define ssid "83Ossipeeps23"
+#define pass "Nac13Ann3k3!"
+#define server "pcr.bounceme.net"
 
-#define BMP_SCK  (13)
-#define BMP_MISO (12)
-#define BMP_MOSI (11)
-#define BMP_CS   (10)
-
-#define sensorPin A5
-
-char ssid[] = "TMOBILE-3422";
-char pass[] = "chip018big6268hits";
-
-int status = WL_IDLE_STATUS;
-
-//char server[] = "www.google.com";
-char server[] = "pcr.bounceme.net";
-
-String postData;
-String postVariable = "temp=";
-
-String postData1;
-String postVariable1 = "ppm=";
-
-String postData2;
-String postVariable2 = "pressure=";
-
-String postData3;
-String postVariable3 = "tvoc=";
-
-
+struct coord {
+    double latitude;
+    double longitude;
+};
 
 WiFiClient client;
 
 void setup() {
+  int status = WL_IDLE_STATUS;
   Serial.begin(9600);
   unsigned status_sensor;
-  
+ 
   while (!Serial) {
      delay(100); // wait for serial port to connect. Needed for native USB port only
   }
-  
+ 
   while (status != WL_CONNECTED) {
     Serial.print("Attempting to connect to Network named: ");
     Serial.println(ssid);
@@ -61,29 +40,50 @@ void setup() {
     Serial.print("Attempting to connect to Network named: ");
     Serial.println(ssid);
     status = WiFi.begin(ssid, pass);
-    delay(10000);
+    delay(1000);
   }
   printWifiStatus();
   if (client.connect(server, 80)) {
     Serial.println("connected to server");
     // Make a HTTP request:
-    client.println("GET /test/tempC.html HTTP/1.1");
+    client.println("GET /test/GUI/test/robot.txt HTTP/1.1");
     client.println("Host: pcr.bounceme.net");
     client.println("Connection: close");
     client.println();
-    
   }
-
-
-  
+ 
 }
 
 void loop() {
+  int i = 0;
+  coord lat_longs[5] = { 0 };
+
   while (client.available()) {
-    char c = client.read();
-    Serial.write(c);
+    String line = client.readStringUntil('\n');
+    Serial.println(line);
+    // if first character is not numeric, skip this line, it's the HTTP header or fluff before our coordinates
+    if (line.length() == 0 || !isdigit(line[0])) {
+      continue;
+    }
+    char* line_cstr = line.c_str();
+    char* lat = strtok(line_cstr, ", ");
+    char* lng = strtok(NULL, ", ");
+    if (i < 5) {
+      lat_longs[i++] = (coord) {
+        .latitude = strtod(lat, NULL),
+        .longitude = strtod(lng, NULL),
+      };
+    }
   }
 
+  for (int j = 0; j < i; j++) {
+      Serial.print("lat long #");
+      Serial.print(j+1);
+      Serial.print(": ");
+      Serial.print(lat_longs[j].latitude, 10);
+      Serial.print(", ");
+      Serial.println(lat_longs[j].longitude, 10);
+  }
   // if the server's disconnected, stop the client:
   if (!client.connected()) {
     Serial.println();
@@ -93,7 +93,6 @@ void loop() {
     // do nothing forevermore:
     while (true);
   }
-
 
 }
 
