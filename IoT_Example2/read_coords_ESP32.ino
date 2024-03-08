@@ -1,8 +1,5 @@
+#include <Arduino.h>
 #include <WiFi.h>
-#include <WebServer.h>
-#include <iostream>
-#include <string>
-#include <ctype.h>
 
 // obviously change this to your own SSID and password
 #define ssid "Tufts_Robot"
@@ -10,42 +7,32 @@
 #define server "pcr.bounceme.net"
 
 struct coord {
-    double latitude;
-    double longitude;
+  double latitude;
+  double longitude;
 };
 
 WiFiClient client;
 
 void setup() {
   int status = WL_IDLE_STATUS;
-  Serial.begin(9600);
+  Serial.begin(115200);
   unsigned status_sensor;
- 
+
   while (!Serial) {
-     delay(100); // wait for serial port to connect. Needed for native USB port only
-  }
- 
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to Network named: ");
-    Serial.println(ssid);
-    status = WiFi.begin(ssid, pass);
-    delay(10000);
+    delay(100);  // wait for serial port to connect. Needed for native USB port only
   }
 
-  Serial.print("SSID: ");
-  Serial.println(WiFi.SSID());
-  IPAddress ip = WiFi.localIP();
-  IPAddress gateway = WiFi.gatewayIP();
-  Serial.print("IP Address: ");
-  Serial.println(ip);
+  WiFi.begin(ssid, pass);
+  WiFi.setSleep(false);// this code solves my problem
 
-  while (status != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED) {
     Serial.print("Attempting to connect to Network named: ");
     Serial.println(ssid);
-    status = WiFi.begin(ssid, pass);
     delay(1000);
   }
+
   printWifiStatus();
+
   if (client.connect(server, 80)) {
     Serial.println("connected to server");
     // Make a HTTP request:
@@ -54,7 +41,6 @@ void setup() {
     client.println("Connection: close");
     client.println();
   }
- 
 }
 
 void loop() {
@@ -68,27 +54,24 @@ void loop() {
     if (line.length() == 0 || !isdigit(line[0])) {
       continue;
     }
-    //char* line_cstr = line.c_str();
-    char *line_cstr = new char[line.length()+1];
-    strcpy(line_cstr, line.c_str());
+    char* line_cstr = (char*)line.c_str();
     char* lat = strtok(line_cstr, ", ");
     char* lng = strtok(NULL, ", ");
     if (i < 5) {
-      lat_longs[i++] = (coord) {
+      lat_longs[i++] = (coord){
         .latitude = strtod(lat, NULL),
         .longitude = strtod(lng, NULL),
       };
     }
-    delete[] line_cstr;
   }
 
   for (int j = 0; j < i; j++) {
-      Serial.print("lat long #");
-      Serial.print(j+1);
-      Serial.print(": ");
-      Serial.print(lat_longs[j].latitude, 10);
-      Serial.print(", ");
-      Serial.println(lat_longs[j].longitude, 10);
+    Serial.print("lat long #");
+    Serial.print(j + 1);
+    Serial.print(": ");
+    Serial.print(lat_longs[j].latitude, 10);
+    Serial.print(", ");
+    Serial.println(lat_longs[j].longitude, 10);
   }
   // if the server's disconnected, stop the client:
   if (!client.connected()) {
@@ -97,9 +80,9 @@ void loop() {
     client.stop();
 
     // do nothing forevermore:
-    while (true);
+    while (true)
+      ;
   }
-  
 }
 
 void printWifiStatus() {
