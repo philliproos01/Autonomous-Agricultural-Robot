@@ -6,8 +6,11 @@ void setup() {
   Serial.begin(9600);
   compass.init();
   delay(500);
-  compass.setCalibrationOffsets(189.00, 302.00, 59.00);
-  compass.setCalibrationScales(0.96, 1.04, 1.00);
+compass.setCalibrationOffsets(512.00, 1093.00, -658.00);
+compass.setCalibrationScales(1.03, 0.79, 1.31);
+
+
+
 }
 
 void loop() {
