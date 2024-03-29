@@ -122,4 +122,34 @@ void run() {
     Serial.print(", ");
     Serial.println(latLongs[i].longitude, 10);
   }
+
+  double rotation = determine_rotation();
+}
+
+double determine_rotation_clockwise() {
+  // find current lat/long
+  // compare to desired lat/long
+  // find current orientation vs true north
+  // calculate angle to turn
+  coord position = get_current_lat_long();
+  coord destination = latLongs[0];
+  double currentOrientation = get_azimuth();
+  double angleFromNorth = atan2(destination.longitude - position.longitude, destination.latitude - position.latitude) * (180.0 / PI);
+  // return degrees we need to turn to the right
+  Serial.print("angle from north : ");
+  Serial.print(angleFromNorth);
+  return angleFromNorth - currentOrientation;
+}
+
+coord get_current_lat_long() {
+  // eventually this will be a call to the GPS module, right now hardcoded as mock
+  return (coord) {
+    .latitude = 42.40586789498043,
+    .longitude = -71.11705388640986,
+  };
+}
+
+double get_azimuth() {
+  // eventually this will be a call to the compass module, right now hardcoded as true north
+  return 0;
 }
