@@ -12,18 +12,32 @@ struct coord {
 };
 
 WiFiClient client;
+coord latLongs[5] = {};
 
 void setup() {
-  int status = WL_IDLE_STATUS;
-  Serial.begin(115200);
-  unsigned status_sensor;
+  Serial.begin(9600);
 
   while (!Serial) {
     delay(100);  // wait for serial port to connect. Needed for native USB port only
   }
+}
+
+void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    wifi_init();
+  }
+
+  bool coordinatesUpdated = populate_coords();
+  if (coordinatesUpdated) {
+    run();
+  }
+  delay(5000);
+
+}
+
+void wifi_init() {
 
   WiFi.begin(ssid, pass);
-  WiFi.setSleep(false);// this code solves my problem
 
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print("Attempting to connect to Network named: ");
@@ -31,61 +45,10 @@ void setup() {
     delay(1000);
   }
 
-  printWifiStatus();
-
-  if (client.connect(server, 80)) {
-    Serial.println("connected to server");
-    // Make a HTTP request:
-    client.println("GET /test/GUI/test/robot.txt HTTP/1.1");
-    client.println("Host: pcr.bounceme.net");
-    client.println("Connection: close");
-    client.println();
-  }
+  print_wifi_status();
 }
 
-void loop() {
-  int i = 0;
-  coord lat_longs[5] = { 0 };
-
-  while (client.available()) {
-    String line = client.readStringUntil('\n');
-    Serial.println(line);
-    // if first character is not numeric, skip this line, it's the HTTP header or fluff before our coordinates
-    if (line.length() == 0 || !isdigit(line[0])) {
-      continue;
-    }
-    char* line_cstr = (char*)line.c_str();
-    char* lat = strtok(line_cstr, ", ");
-    char* lng = strtok(NULL, ", ");
-    if (i < 5) {
-      lat_longs[i++] = (coord){
-        .latitude = strtod(lat, NULL),
-        .longitude = strtod(lng, NULL),
-      };
-    }
-  }
-
-  for (int j = 0; j < i; j++) {
-    Serial.print("lat long #");
-    Serial.print(j + 1);
-    Serial.print(": ");
-    Serial.print(lat_longs[j].latitude, 10);
-    Serial.print(", ");
-    Serial.println(lat_longs[j].longitude, 10);
-  }
-  // if the server's disconnected, stop the client:
-  if (!client.connected()) {
-    Serial.println();
-    Serial.println("disconnecting from server.");
-    client.stop();
-
-    // do nothing forevermore:
-    while (true)
-      ;
-  }
-}
-
-void printWifiStatus() {
+void print_wifi_status() {
   // print the SSID of the network you're attached to:
   Serial.print("SSID: ");
   Serial.println(WiFi.SSID());
@@ -100,4 +63,63 @@ void printWifiStatus() {
   Serial.print("signal strength (RSSI):");
   Serial.print(rssi);
   Serial.println(" dBm");
+}
+
+bool populate_coords() {
+  if (!client.connect(server, 80)) {
+    Serial.println("connection failed");
+    return false;
+  } 
+  Serial.println("Connected to server");
+  // Make a HTTP request:
+  client.println("GET /test/GUI/test/robot.txt HTTP/1.1");
+  client.println("Host: pcr.bounceme.net");
+  client.println("Connection: close");
+  client.println();
+
+  // block until ready to read
+  while (!client.connected() || !client.available());
+
+  int i = 0;
+  coord newLatLongs[5] = {};
+
+  while (client.available()) {
+    String line = client.readStringUntil('\n');
+    // if first character is not numeric, skip this line, it's the HTTP header or fluff before our coordinates
+    if (line.length() == 0 || !isdigit(line[0])) {
+      continue;
+    }
+    char* lat = strtok((char*)line.c_str(), ", ");
+    char* lng = strtok(NULL, ", ");
+    if (i < 5) {
+      newLatLongs[i++] = (coord){
+        .latitude = strtod(lat, NULL),
+        .longitude = strtod(lng, NULL),
+      };
+    }
+  }
+
+  Serial.println("fetched data, now disconnecting from server.");
+  client.stop();
+
+  // compare for equality, if not equal, update latLongs[]
+  if (memcmp(latLongs, newLatLongs, i * sizeof(coord)) == 0) {
+    return false;
+  }
+
+  // not equal, copy newLatLongs to latLongs and return true
+  memcpy(latLongs, newLatLongs, 5 * sizeof(coord));
+  return true;
+}
+
+void run() {
+  Serial.println("new data!");
+  for (int i = 0; i < 5; i++) {
+    Serial.print("data lat long #");
+    Serial.print(i + 1);
+    Serial.print(": ");
+    Serial.print(latLongs[i].latitude, 10);
+    Serial.print(", ");
+    Serial.println(latLongs[i].longitude, 10);
+  }
 }
