@@ -1,21 +1,65 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <QMC5883LCompass.h>
+#include <Adafruit_GPS.h>
 
-// obviously change this to your own SSID and password
+// obviouy change this to your own SSID and password
 #define ssid "Tufts_Robot"
 #define pass ""
 #define server "pcr.bounceme.net"
+
+#define GPSSerial Serial2
+
+// Connect to the GPS on the hardware port
+Adafruit_GPS GPS(&GPSSerial);
+
+// Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
+// Set to 'true' if you want to debug and listen to the raw GPS sentences
+#define GPSECHO false
+
+uint32_t timer = millis();
 
 struct coord {
   double latitude;
   double longitude;
 };
 
+QMC5883LCompass compass;
+
 WiFiClient client;
 coord latLongs[5] = {};
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
+  //starting the GPS
+  GPS.begin(9600);
+  // uncomment this line to turn on RMC (recommended minimum) and GGA (fix data) including altitude
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  // uncomment this line to turn on only the "minimum recommended" data
+  //GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
+  // For parsing data, we don't suggest using anything but either RMC only or RMC+GGA since
+  // the parser doesn't care about other sentences at this time
+  // Set the update rate
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ); // 1 Hz update rate
+  // For the parsing code to work nicely and have time to sort thru the data, and
+  // print it out we don't suggest using anything higher than 1 Hz
+  // Request updates on antenna status, comment out to keep quiet
+  GPS.sendCommand(PGCMD_ANTENNA);
+
+  delay(1000);
+
+  // Ask for firmware version
+  GPSSerial.println(PMTK_Q_RELEASE);
+
+
+
+
+  //starting the compass
+  compass.init();
+  delay(500);
+  compass.setCalibrationOffsets(512.00, 1093.00, -658.00); //Compass calibration required for accurancy
+  compass.setCalibrationScales(1.03, 0.79, 1.31); //The default calibration may need to change
+
 
   while (!Serial) {
     delay(100);  // wait for serial port to connect. Needed for native USB port only
@@ -23,10 +67,11 @@ void setup() {
 }
 
 void loop() {
+  GPS.read();
   if (WiFi.status() != WL_CONNECTED) {
     wifi_init();
   }
-
+ 
   bool coordinatesUpdated = populate_coords();
   if (coordinatesUpdated) {
     run();
@@ -69,7 +114,7 @@ bool populate_coords() {
   if (!client.connect(server, 80)) {
     Serial.println("connection failed");
     return false;
-  } 
+  }
   Serial.println("Connected to server");
   // Make a HTTP request:
   client.println("GET /test/GUI/test/robot.txt HTTP/1.1");
@@ -123,7 +168,7 @@ void run() {
     Serial.println(latLongs[i].longitude, 10);
   }
 
-  double rotation = determine_rotation();
+  double rotation = determine_rotation_clockwise();
 }
 
 double determine_rotation_clockwise() {
@@ -137,19 +182,31 @@ double determine_rotation_clockwise() {
   double angleFromNorth = atan2(destination.longitude - position.longitude, destination.latitude - position.latitude) * (180.0 / PI);
   // return degrees we need to turn to the right
   Serial.print("angle from north : ");
-  Serial.print(angleFromNorth);
+  Serial.println(angleFromNorth);
+  Serial.print("Amount to rotate: ");
+  Serial.println((angleFromNorth - currentOrientation));
   return angleFromNorth - currentOrientation;
 }
 
 coord get_current_lat_long() {
+  while (!GPS.fix) {
+    Serial.println("no fix, retrying..");
+    GPS.read();
+    delay(1000);
+  }
   // eventually this will be a call to the GPS module, right now hardcoded as mock
   return (coord) {
-    .latitude = 42.40586789498043,
-    .longitude = -71.11705388640986,
+    .latitude = GPS.latitude;
+    .longitude = GPS.longitude;
+    //debug values
+    //.latitude = 42.40586789498043,
+    //.longitude = -71.11705388640986,
   };
 }
 
 double get_azimuth() {
+  compass.read();
+  return compass.getAzimuth();
   // eventually this will be a call to the compass module, right now hardcoded as true north
-  return 0;
+  //return 0;
 }
