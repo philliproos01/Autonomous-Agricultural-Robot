@@ -4,8 +4,8 @@
 #include <Adafruit_GPS.h>
 
 // obviously change this to your own SSID and password
-#define ssid "Tufts_Robot"
-#define pass ""
+#define ssid "TMOBILE-3422"
+#define pass "chip018big6268hits"
 #define server "pcr.bounceme.net"
 
 #define GPSSerial Serial2
@@ -51,9 +51,6 @@ void setup() {
   // Ask for firmware version
   GPSSerial.println(PMTK_Q_RELEASE);
 
-
-
-
   //starting the compass
   compass.init();
   delay(500);
@@ -67,17 +64,53 @@ void setup() {
 }
 
 void loop() {
-  GPS.read();
-  if (WiFi.status() != WL_CONNECTED) {
-    wifi_init();
+  char c = GPS.read();
+  // if you want to debug, this is a good time to do it!
+  if (GPSECHO)
+    if (c) Serial.print(c);
+  // if a sentence is received, we can check the checksum, parse it...
+  if (GPS.newNMEAreceived()) {
+    // a tricky thing here is if we print the NMEA sentence, or data
+    // we end up not listening and catching other sentences!
+    // so be very wary if using OUTPUT_ALLDATA and trying to print out data
+    Serial.print(GPS.lastNMEA()); // this also sets the newNMEAreceived() flag to false
+    if (!GPS.parse(GPS.lastNMEA())) // this also sets the newNMEAreceived() flag to false
+      return; // we can fail to parse a sentence in which case we should just wait for another
   }
-  
-  bool coordinatesUpdated = populate_coords();
-  if (coordinatesUpdated) {
-    run();
-  }
-  delay(5000);
 
+  if (millis() - timer > 2000) {
+    timer = millis(); // reset the timer
+    Serial.print("\nTime: ");
+    if (GPS.hour < 10) { Serial.print('0'); }
+    Serial.print(GPS.hour, DEC); Serial.print(':');
+    if (GPS.minute < 10) { Serial.print('0'); }
+    Serial.print(GPS.minute, DEC); Serial.print(':');
+    if (GPS.seconds < 10) { Serial.print('0'); }
+    Serial.print(GPS.seconds, DEC); Serial.print('.');
+    if (GPS.milliseconds < 10) {
+      Serial.print("00");
+    } else if (GPS.milliseconds > 9 && GPS.milliseconds < 100) {
+      Serial.print("0");
+    }
+    
+    Serial.print("Fix: "); Serial.println((int)GPS.fix);
+    if (GPS.fix) {
+      
+
+      if (WiFi.status() != WL_CONNECTED) {
+        wifi_init();
+      }
+    
+      bool coordinatesUpdated = populate_coords();
+      if (coordinatesUpdated) {
+        run();
+      }
+    }
+  }
+  /*
+  
+  delay(5000);
+*/
 }
 
 void wifi_init() {
@@ -185,26 +218,22 @@ double determine_rotation_clockwise() {
   Serial.println(angleFromNorth);
   Serial.print("Amount to rotate: ");
   Serial.println((angleFromNorth - currentOrientation));
+  Serial.print("Location: ");
+  Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
+  Serial.print(", ");
+  Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
   return angleFromNorth - currentOrientation;
 }
 
 coord get_current_lat_long() {
-  while (!GPS.fix) {
-    GPS.read();
-  }
-    
-  // eventually this will be a call to the GPS module, right now hardcoded as mock
-    return (coord) {
+  return (coord) {
       .latitude = GPS.latitude,
       .longitude = GPS.longitude,
       //debug values
       //.latitude = 42.40586789498043,
       //.longitude = -71.11705388640986,
   };
-  Serial.print("Location: ");
-  Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
-  Serial.print(", ");
-  Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
+  
 }
 
 double get_azimuth() {
