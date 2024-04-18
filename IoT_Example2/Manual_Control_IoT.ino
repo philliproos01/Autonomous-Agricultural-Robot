@@ -306,9 +306,12 @@ void left(int period) {
     digitalWrite(motorDirection1, 0);
     digitalWrite(motorDirection2, 0);
     delay(period);
-    ledcWrite(pwmChannel1, SPEED);
-    ledcWrite(pwmChannel2, SPEED);
-    
+    ledcWrite(pwmChannel1, 35);
+    ledcWrite(pwmChannel2, 35);
+    delay(1000);
+    ledcWrite(pwmChannel1, 0);
+    ledcWrite(pwmChannel2, 0);
+    delay(5000);
     
 
     //slowdown();
@@ -319,8 +322,8 @@ void right(int period) {
     digitalWrite(motorDirection1, HIGH);
     digitalWrite(motorDirection2, HIGH);
     delay(period); 
-    ledcWrite(pwmChannel1, SPEED);
-    ledcWrite(pwmChannel2, SPEED);
+    ledcWrite(pwmChannel1, 45);
+    ledcWrite(pwmChannel2, 45); //15 too slow... anything than 20 too slow
 }
 
 
