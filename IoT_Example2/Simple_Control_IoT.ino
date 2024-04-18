@@ -15,7 +15,7 @@ const int _pwmCtrl = 25;
 
 /* Put your SSID & Password */
 const char* ssid = "Hasta la vista, baby";  // Enter SSID here
-const char* password = "12345678";  //Enter Password here
+const char* password = "password";  //Enter Password here
 
 double _freq;               // Frequency of the signal on the speed pin
 double _rpm;                // Wheel speed in revolutions per minute
@@ -36,11 +36,24 @@ uint16_t motorDriver1 = 32;
 uint16_t motorDirection2 = 4; //set to 4
 uint16_t motorDriver2 = 26;
 
+
+const int pwmChannel1 = 0;
+const int pwmPin1 = 32;
+const int pwmFreq1 = 490;
+const int pwmResolution1 = 8;
+
+// Set up PWM on pin 26  
+const int pwmChannel2 = 1;
+const int pwmPin2 = 26;
+const int pwmFreq2 = 490;
+const int pwmResolution2 = 8;
+
+
 bool _dir = 0;
 bool _dir2 = 1;
 
 
-const int SPEED = 25;
+const int SPEED = 50;
 const int PIN_SPEED = 14;
 const int PIN_SPEED2 = 12;
 
@@ -88,15 +101,21 @@ void setup() {
     pinMode(motorDirection1, OUTPUT);
     pinMode(motorDirection2, OUTPUT);
     // Set PWM pin to output
-    pinMode(motorDriver1, OUTPUT);
-    pinMode(motorDriver2, OUTPUT);
+
   
     //feedback pin for motor 1
     pinMode(PIN_SPEED, INPUT);
     digitalWrite(motorDirection1, _dir);
     digitalWrite(motorDirection2, _dir2);
-    analogWrite(motorDriver1, 0);
-    analogWrite(motorDriver2, 0);
+    ledcSetup(pwmChannel1, 5000, pwmResolution1);
+    ledcSetup(pwmChannel2, 5000, pwmResolution2);
+
+    // Attach the channels to the GPIO pins
+    ledcAttachPin(pwmPin1, pwmChannel1);
+    ledcAttachPin(pwmPin2, pwmChannel2);
+
+
+    
     Serial.println("Starting motor");
 
 }
@@ -260,12 +279,12 @@ String SendHTML(uint8_t led1stat,uint8_t led2stat){
   }
 
 void forward() {
-    Serial.println("Going Forward");
+    //Serial.println("Going Forward");
     digitalWrite(motorDirection1, 1);
     digitalWrite(motorDirection2, 0);
     delay(5);
-    analogWrite(motorDriver1, SPEED);
-    analogWrite(motorDriver2, SPEED);
+    ledcWrite(pwmChannel1, SPEED);
+    ledcWrite(pwmChannel2, SPEED);
     
     
 
@@ -276,8 +295,8 @@ void backward() {
     digitalWrite(motorDirection1, LOW);
     digitalWrite(motorDirection2, HIGH);
     delay(5);
-    analogWrite(motorDriver1, SPEED);
-    analogWrite(motorDriver2, SPEED);
+    ledcWrite(pwmChannel1, SPEED);
+    ledcWrite(pwmChannel2, SPEED);
     
 
 }
@@ -287,8 +306,8 @@ void left(int period) {
     digitalWrite(motorDirection1, 0);
     digitalWrite(motorDirection2, 0);
     delay(period);
-    analogWrite(motorDriver1, SPEED*1.4);
-    analogWrite(motorDriver2, SPEED*1.4);
+    ledcWrite(pwmChannel1, SPEED);
+    ledcWrite(pwmChannel2, SPEED);
     
     
 
@@ -300,8 +319,8 @@ void right(int period) {
     digitalWrite(motorDirection1, HIGH);
     digitalWrite(motorDirection2, HIGH);
     delay(period); 
-    analogWrite(motorDriver1, SPEED*1.4);
-    analogWrite(motorDriver2, SPEED*1.4);
+    ledcWrite(pwmChannel1, SPEED);
+    ledcWrite(pwmChannel2, SPEED);
 }
 
 
@@ -310,16 +329,16 @@ void spin() {
     digitalWrite(motorDirection1, 1);
     digitalWrite(motorDirection2, 1);
     delay(100);
-    analogWrite(motorDriver1, SPEED*2);
-    analogWrite(motorDriver2, SPEED*2);
+    ledcWrite(pwmChannel1, SPEED);
+    ledcWrite(pwmChannel2, SPEED);
 
 }
 
 
 //this is NOT a brake
 void slowdown() {
-    analogWrite(motorDriver1, 0);
-    analogWrite(motorDriver2, 0);
+    ledcWrite(pwmChannel1, 0);
+    ledcWrite(pwmChannel2, 0);
     /*digitalWrite(motorDirection1, _dir);
     digitalWrite(motorDirection2, _dir);
     analogWrite(motorDriver1, 0);
